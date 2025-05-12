@@ -4,193 +4,175 @@ window.onload = function() {
   let expressionResult = "";
   let selectedOperation = null;
   let outputElement = document.getElementById("result");
-  let digitButtons = document.querySelectorAll('[id^="btn_digit_"]');
   let accumulatedValue = 0;
 
-  function onDigitButtonClicked(digit) {
-    if (!selectedOperation) {
-      if (digit !== "." || (digit === "." && !a.includes("."))) {
-        a += digit;
-      }
-      outputElement.innerHTML = a;
+  function setOutput(value) {
+    outputElement.innerHTML = value;
+  }
+
+  function activeOperand() {
+    return selectedOperation ? b : a;
+  }
+
+  function setActiveOperand(val) {
+    if (selectedOperation) {
+      b = val;
     } else {
-      if (digit !== "." || (digit === "." && !b.includes("."))) {
-        b += digit;
-      }
-      outputElement.innerHTML = b;
+      a = val;
     }
   }
 
-  digitButtons.forEach(button => {
-    button.onclick = function() {
-      onDigitButtonClicked(button.innerHTML);
-    };
+  function formatExp(num) {
+    if (!Number.isFinite(num)) return "Error";
+    if (Math.abs(num) >= 1e10 || (Math.abs(num) > 0 && Math.abs(num) < 1e-12)) {
+      return num.toExponential(9);
+    }
+    return num.toString();
+  }
+
+  function onDigitButtonClicked(digit) {
+    let current = activeOperand();
+    if (digit === "." && current.includes(".")) return;
+    if (current === "0" && digit !== ".") current = "";
+    current += digit;
+    setActiveOperand(current);
+    setOutput(current);
+  }
+
+  document.querySelectorAll('[id^="btn_digit_"]').forEach(button => {
+    button.onclick = () => onDigitButtonClicked(button.innerHTML);
   });
-
-  document.getElementById("btn_op_mult").onclick = function() {
-    if (a === "") return;
-    selectedOperation = "x";
-  };
-
-  document.getElementById("btn_op_plus").onclick = function() {
-    if (a === "") return;
-    selectedOperation = "+";
-  };
-
-  document.getElementById("btn_op_minus").onclick = function() {
-    if (a === "") return;
-    selectedOperation = "-";
-  };
-
-  document.getElementById("btn_op_div").onclick = function() {
-    if (a === "") return;
-    selectedOperation = "/";
-  };
 
   document.getElementById("btn_op_clear").onclick = function() {
     a = "";
     b = "";
-    expressionResult = "";
     selectedOperation = null;
-    outputElement.innerHTML = 0;
+    expressionResult = "";
+    setOutput("0");
+  };
+
+  document.getElementById("btn_op_mult").onclick = function() {
+    if (a !== "") selectedOperation = "x";
+  };
+  document.getElementById("btn_op_plus").onclick = function() {
+    if (a !== "") selectedOperation = "+";
+  };
+  document.getElementById("btn_op_minus").onclick = function() {
+    if (a !== "") selectedOperation = "-";
+  };
+  document.getElementById("btn_op_div").onclick = function() {
+    if (a !== "") selectedOperation = "/";
   };
 
   document.getElementById("btn_op_equal").onclick = function() {
     if (a === "" || b === "" || !selectedOperation) return;
+    let x = +a, y = +b;
     switch (selectedOperation) {
-      case "x":
-        expressionResult = (+a) * (+b);
-        break;
-      case "+":
-        expressionResult = (+a) + (+b);
-        break;
-      case "-":
-        expressionResult = (+a) - (+b);
-        break;
-      case "/":
-        expressionResult = (+a) / (+b);
-        break;
+      case "x": expressionResult = x * y; break;
+      case "+": expressionResult = x + y; break;
+      case "-": expressionResult = x - y; break;
+      case "/": expressionResult = x / y; break;
     }
-    a = expressionResult.toString();
+    const formatted = formatExp(expressionResult);
+    a = formatted;
     b = "";
     selectedOperation = null;
-    outputElement.innerHTML = a;
+    setOutput(formatted);
   };
 
   document.getElementById("btn_op_sign").onclick = function() {
-    if (!selectedOperation) {
-      a = a.startsWith("-") ? a.slice(1) : "-" + a;
-      outputElement.innerHTML = a;
-    } else {
-      b = b.startsWith("-") ? b.slice(1) : "-" + b;
-      outputElement.innerHTML = b;
-    }
+    let current = activeOperand();
+    current = current.startsWith("-") ? current.slice(1) : "-" + current;
+    setActiveOperand(current);
+    setOutput(current);
   };
 
   document.getElementById("btn_op_percent").onclick = function() {
-    if (!selectedOperation) {
-      if (a !== "") {
-        a = (+a / 100).toString();
-        outputElement.innerHTML = a;
-      }
-    } else {
-      if (b !== "") {
-        b = (+b / 100).toString();
-        outputElement.innerHTML = b;
-      }
+    let current = activeOperand();
+    if (current !== "") {
+      const percent = (+current) / 100;
+      const formatted = formatExp(percent);
+      setActiveOperand(formatted);
+      setOutput(formatted);
     }
   };
 
   document.getElementById("btn_op_backspace").onclick = function() {
-    if (!selectedOperation) {
-      a = a.slice(0, -1);
-      if (a === "") a = "0";
-      outputElement.innerHTML = a;
-    } else {
-      b = b.slice(0, -1);
-      if (b === "") b = "0";
-      outputElement.innerHTML = b;
-    }
-  };
-
-  document.getElementById("btn_op_color").onclick = function() {
-    document.body.classList.toggle("alt-bg");
+    let current = activeOperand();
+    if (current === "") return;
+    current = current.slice(0, -1);
+    if (current === "") current = "0";
+    setActiveOperand(current);
+    setOutput(current);
   };
 
   document.getElementById("btn_op_sqrt").onclick = function() {
-    if (!selectedOperation) {
-      if (a !== "") {
-        expressionResult = Math.sqrt(+a);
-        a = expressionResult.toString();
-        outputElement.innerHTML = a;
-      }
-    } else {
-      if (b !== "") {
-        expressionResult = Math.sqrt(+b);
-        b = expressionResult.toString();
-        outputElement.innerHTML = b;
-      }
+    let current = activeOperand();
+    if (current !== "") {
+      const root = Math.sqrt(+current);
+      const formatted = formatExp(root);
+      setActiveOperand(formatted);
+      setOutput(formatted);
     }
   };
 
   document.getElementById("btn_op_pow2").onclick = function() {
-    if (!selectedOperation) {
-      if (a !== "") {
-        expressionResult = (+a) ** 2;
-        a = expressionResult.toString();
-        outputElement.innerHTML = a;
-      }
-    } else {
-      if (b !== "") {
-        expressionResult = (+b) ** 2;
-        b = expressionResult.toString();
-        outputElement.innerHTML = b;
-      }
+    let current = activeOperand();
+    if (current !== "") {
+      const squared = (+current) ** 2;
+      const formatted = formatExp(squared);
+      setActiveOperand(formatted);
+      setOutput(formatted);
     }
   };
 
   function factorial(n) {
     if (n < 0) return "Error";
-    if (n <= 1) return 1;
-    return n * factorial(n - 1);
+    let result = 1;
+    for (let i = 1; i <= n; i++) {
+      result *= i;
+      if (!Number.isFinite(result)) return "Overflow";
+    }
+    return result;
   }
 
   document.getElementById("btn_op_factorial").onclick = function() {
-    if (!selectedOperation) {
-      if (a !== "") {
-        expressionResult = factorial(+a).toString();
-        a = expressionResult;
-        outputElement.innerHTML = a;
-      }
-    } else {
-      if (b !== "") {
-        expressionResult = factorial(+b).toString();
-        b = expressionResult;
-        outputElement.innerHTML = b;
+    let current = activeOperand();
+    if (current !== "" && current !== "-") {
+      let num = +current;
+      let fact = factorial(num);
+      if (typeof fact === "number") {
+        const formatted = formatExp(fact);
+        setActiveOperand(formatted);
+        setOutput(formatted);
+      } else {
+        setActiveOperand(fact);
+        setOutput(fact);
       }
     }
   };
 
   document.getElementById("btn_op_000").onclick = function() {
-    if (!selectedOperation) {
-      a += "000";
-      outputElement.innerHTML = a;
-    } else {
-      b += "000";
-      outputElement.innerHTML = b;
+    let current = activeOperand();
+    if (current !== "" && current !== "0" && current !== "-") {
+      current += "000";
+      setActiveOperand(current);
+      setOutput(current);
     }
   };
 
   document.getElementById("btn_op_accum_add").onclick = function() {
     accumulatedValue += Number(a || "0");
-    a = accumulatedValue.toString();
-    outputElement.innerHTML = a;
+    const formatted = formatExp(accumulatedValue);
+    a = formatted;
+    setOutput(formatted);
   };
 
   document.getElementById("btn_op_accum_sub").onclick = function() {
     accumulatedValue -= Number(a || "0");
-    a = accumulatedValue.toString();
-    outputElement.innerHTML = a;
+    const formatted = formatExp(accumulatedValue);
+    a = formatted;
+    setOutput(formatted);
   };
 
   document.getElementById("btn_op_color_result").onclick = function() {
@@ -198,14 +180,16 @@ window.onload = function() {
   };
 
   document.getElementById("btn_op_custom").onclick = function() {
-    if (!selectedOperation) {
-      expressionResult = (+a) ** 3;
-      a = expressionResult.toString();
-      outputElement.innerHTML = a;
-    } else {
-      expressionResult = (+b) ** 3;
-      b = expressionResult.toString();
-      outputElement.innerHTML = b;
+    let current = activeOperand();
+    if (current !== "" && current !== "-") {
+      const cubed = (+current) ** 3;
+      const formatted = formatExp(cubed);
+      setActiveOperand(formatted);
+      setOutput(formatted);
     }
+  };
+
+  document.getElementById("btn_op_color").onclick = function() {
+    document.body.classList.toggle("alt-bg");
   };
 };
